@@ -76,9 +76,9 @@ func main() {
 
     text := string(fileContent)
 
-    go Word_Spaces_Counter(text)
-	go Cpsmlt_Counter(text)
-	go vowels_Counter(text)
+    Word_Spaces_Counter(text)
+	Cpsmlt_Counter(text)
+	vowels_Counter(text)
 
 	end := time.Now()
 	Total_time := end.Sub(start)
