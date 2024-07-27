@@ -22,9 +22,9 @@ func Word_Spaces_Counter(s string, wg *sync.WaitGroup){
 				wordCounts[word]++
 				total_words ++
 				word = ""
-			} else {
-				word+= string(char)
 			}
+		} else {
+			word+= string(char)
 		}
 		
 	}
@@ -80,7 +80,7 @@ func main() {
     }
 
     text := string(fileContent)
-
+	//txt := "bjkgjhg gjgjhg jgjgjh jgukgb nmgjg"
 	var wg sync.WaitGroup
 	wg.Add(3)
 
