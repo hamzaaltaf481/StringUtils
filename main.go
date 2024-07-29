@@ -19,13 +19,14 @@ type Results struct {
 func Word_Spaces_Counter(s string, wg *sync.WaitGroup, res *Results, ch chan *Results) {
     defer wg.Done()
 
-    // word := ""
     total_words := 0
     spaces := 0
     Cp := 0
     sm := 0
     vowel := 0
 
+    a:= strings.Split(s," ")
+    total_words = len(a)
 
     for _, char := range s {
         if char == ' ' {
@@ -42,9 +43,6 @@ func Word_Spaces_Counter(s string, wg *sync.WaitGroup, res *Results, ch chan *Re
             vowel++
         }
     }
-
-    a:= strings.Split(s," ")
-    total_words = len(a)
 
     res.TotalWords = total_words
     res.Spaces = spaces
