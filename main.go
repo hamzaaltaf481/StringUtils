@@ -3,76 +3,62 @@ package main
 import (
     "fmt"
     "io/ioutil"
-	"time"
-	"sync"
+    "sync"
+    "time"
+    "strings"
 )
-func Word_Spaces_Counter(s string, wg *sync.WaitGroup){
-	defer wg.Done()
 
-	wordCounts := make(map[string]int)
-	word := ""
-	total_words := 0
-	spaces := 0
-
-	for _,char := range s {
-
-		if char == ' '{
-			spaces++
-			if word != ""{
-				wordCounts[word]++
-				total_words ++
-				word = ""
-			}
-		} else {
-			word+= string(char)
-		}
-		
-	}
-	if word!= "" {
-		wordCounts[word]++
-		total_words++
-	}
-
-	fmt.Printf("Total Words: %v\nTotal Spaces: %v\n",total_words,spaces)
-
+type Results struct {
+    TotalWords  int
+    Spaces      int
+    Capitals    int
+    Small       int
+    Vowels      int
 }
-func Cpsmlt_Counter(s string, wg *sync.WaitGroup){
-	defer wg.Done()
 
-	Cp := 0
-	sm := 0
-	for _,char := range s{
+func Word_Spaces_Counter(s string, wg *sync.WaitGroup, res *Results, ch chan *Results) {
+    defer wg.Done()
 
-		if char >= 'A' && char <= 'Z'{
-			Cp++
-		}
-		if char >= 'a' && char <= 'z'{
-			sm++
-		}
-	}
-	fmt.Printf("Capital Letter : %v\nSmall Letter: %v\n",Cp,sm)
+    // word := ""
+    total_words := 0
+    spaces := 0
+    Cp := 0
+    sm := 0
+    vowel := 0
 
-}
-func vowels_Counter(s string, wg *sync.WaitGroup){
-	wg.Done()
 
-	vowel := 0
-	for _,char := range s{
+    for _, char := range s {
+        if char == ' ' {
+            spaces++
+        } 
+        if char >= 'A' && char <= 'Z' {
+            Cp++
+        }
+        if char >= 'a' && char <= 'z' {
+            sm++
+        }
+        if char == 'A' || char == 'a' || char == 'E' || char == 'e' || char == 'I' || char == 'i' ||
+            char == 'O' || char == 'o' || char == 'U' || char == 'u' {
+            vowel++
+        }
+    }
 
-		if char == 'A' || char == 'a'|| char == 'E' || char == 'e' || char == 'I' || char == 'i' ||
-		char == 'O' || char == 'o' || char == 'U' || char == 'u' {
-			vowel++
-		}
+    a:= strings.Split(s," ")
+    total_words = len(a)
 
-	}
-	fmt.Printf("Total Vowels: %v\n", vowel)
+    res.TotalWords = total_words
+    res.Spaces = spaces
+    res.Capitals = Cp
+    res.Small = sm
+    res.Vowels = vowel
 
+    ch <- res
 }
 
 func main() {
     filePath := "./Test.txt"
-	start := time.Now()
-	
+    start := time.Now()
+
     fileContent, err := ioutil.ReadFile(filePath)
     if err != nil {
         fmt.Println("Error reading file:", err)
@@ -80,17 +66,22 @@ func main() {
     }
 
     text := string(fileContent)
-	//txt := "bjkgjhg gjgjhg jgjgjh jgukgb nmgjg"
-	var wg sync.WaitGroup
-	wg.Add(3)
+    var wg sync.WaitGroup
+    wg.Add(1)
 
-    go Word_Spaces_Counter(text, &wg)
-	go Cpsmlt_Counter(text, &wg)
-	go vowels_Counter(text, &wg)
+    ch := make(chan *Results, 3)
+    res := &Results{}
 
-	wg.Wait()
+    go Word_Spaces_Counter(text[:len(text)], &wg, res, ch)
 
-	end := time.Now()
-	Total_time := end.Sub(start)
-	fmt.Printf("Execution time: %v\n", Total_time)
+        <-ch
+
+
+    wg.Wait()
+
+    fmt.Printf("Total Words: %v\nTotal Spaces: %v\nCapital Letters: %v\nSmall Letters: %v\nTotal Vowels: %v\n", res.TotalWords, res.Spaces, res.Capitals, res.Small, res.Vowels)
+
+    end := time.Now()
+    total_time := end.Sub(start)
+    fmt.Printf("Execution time: %v\n", total_time)
 }
