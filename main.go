@@ -5,7 +5,6 @@ import (
     "io/ioutil"
     "sync"
     "time"
-    "strings"
 )
 
 type Results struct {
@@ -16,39 +15,26 @@ type Results struct {
     Vowels      int
 }
 
-func Word_Spaces_Counter(s string, wg *sync.WaitGroup, res *Results, ch chan *Results) {
+func Word_Spaces_Counter(s string, wg *sync.WaitGroup, ch chan *Results) {
     defer wg.Done()
-
-    total_words := 0
-    spaces := 0
-    Cp := 0
-    sm := 0
-    vowel := 0
-
-    a:= strings.Split(s," ")
-    total_words = len(a)
+    res := &Results{}
 
     for _, char := range s {
         if char == ' ' {
-            spaces++
+            res.Spaces++
         } 
         if char >= 'A' && char <= 'Z' {
-            Cp++
+            res.Capitals++
         }
         if char >= 'a' && char <= 'z' {
-            sm++
+            res.Small++
         }
         if char == 'A' || char == 'a' || char == 'E' || char == 'e' || char == 'I' || char == 'i' ||
             char == 'O' || char == 'o' || char == 'U' || char == 'u' {
-            vowel++
+            res.Vowels++
         }
     }
-
-    res.TotalWords = total_words
-    res.Spaces = spaces
-    res.Capitals = Cp
-    res.Small = sm
-    res.Vowels = vowel
+    res.TotalWords = res.Spaces + 1   
 
     ch <- res
 }
@@ -65,19 +51,41 @@ func main() {
 
     text := string(fileContent)
     var wg sync.WaitGroup
-    wg.Add(1)
 
-    ch := make(chan *Results, 3)
-    res := &Results{}
+    ch := make(chan *Results)
+    numChunk := 4
+    chunkSize := len(text)/numChunk    
 
-    go Word_Spaces_Counter(text[:len(text)], &wg, res, ch)
+    for i := 0; i < numChunk ; i++ {
+        start := i * chunkSize
+        end := start + chunkSize
+        if end == len(text){
+            end = len(text) +1
+        }
+        chunk := text[start:end]
 
-        <-ch
+        wg.Add(1)
+        go Word_Spaces_Counter(chunk, &wg, ch)
+        
+    }
+    go func() {
+        wg.Wait()
+        close(ch)
+    }()
+
+    finalRes := &Results{}
+        for res := range ch{
+        finalRes.TotalWords += res.TotalWords
+        finalRes.Spaces += res.Spaces
+        finalRes.Capitals += res.Capitals
+        finalRes.Small += res.Small
+        finalRes.Vowels += res.Vowels
+    }
+
+    
 
 
-    wg.Wait()
-
-    fmt.Printf("Total Words: %v\nTotal Spaces: %v\nCapital Letters: %v\nSmall Letters: %v\nTotal Vowels: %v\n", res.TotalWords, res.Spaces, res.Capitals, res.Small, res.Vowels)
+    fmt.Printf("Total Words: %v\nTotal Spaces: %v\nCapital Letters: %v\nSmall Letters: %v\nTotal Vowels: %v\n", finalRes.TotalWords, finalRes.Spaces, finalRes.Capitals, finalRes.Small, finalRes.Vowels)
 
     end := time.Now()
     total_time := end.Sub(start)
